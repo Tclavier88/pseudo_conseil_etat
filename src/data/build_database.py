@@ -91,9 +91,9 @@ def build_database(raw_files_path, clean_data_path, only_corriges=True, n_jobs=a
 
     df_decisions = pd.read_csv(raw_files_path  + "documents.csv")
     if only_corriges:
-        df_decisions = df_decisions[df_decisions.statut == 5] # modifier ici
+        df_decisions = df_decisions[df_decisions.statut == 5 or df_decisions.statut == 2] # modifier ici
     df_decisions = get_correct_line(df_decisions)
-    df_decisions = df_decisions.sample(frac=0.1)
+    #df_decisions = df_decisions.sample(frac=0.1)
 
     df_decisions["valid"] = False
     df_decisions["text"] = None
