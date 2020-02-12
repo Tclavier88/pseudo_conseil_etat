@@ -1,52 +1,38 @@
 import os
-import sys
-import textract
-import subprocess
-
-import pandas as pd
 import src.data.xml2conll as x2c
+import subprocess
+import pandas as pd
 
-from glob import glob
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
-from src.data.doc2txt import doc2txt
 from src.tools.utils import available_cpu_count
 
-n_jobs = available_cpu_count()
+def create_folder(folder_path, absolute=True):
 
-database_path = "database/"
-clean_data_path = "clean_data/"
+    if not absolute:
+        path = os.getcwd()
+        folder_path = path + "/" + folder_path
 
-
-def create_work_folders(database_path=database_path, clean_data_path=clean_data_path):
-    path = os.getcwd()
-    print("The current working directory is %s" % path)
-    new_db_path = path + "/" + database_path
-    new_clean_data_path = path + "/" + clean_data_path
     access_rights = 0o755
 
-    if not os.path.isdir(new_db_path):
+    if not os.path.isdir(folder_path):
+
         try:
-            os.mkdir(new_db_path, access_rights)
+            os.mkdir(folder_path, access_rights)
         except OSError:
-            print("Creation of the directory %s failed" % new_db_path)
+            print("Creation of the directory %s failed" % folder_path)
         else:
-            print("Successfully created the directory %s" % new_db_path)
+            print("Successfully created the directory %s" % folder_path)
 
     else:
-        print("Directory %s already exists" % new_db_path)
+        print("Directory %s already exists" % folder_path)
 
-    if not os.path.isdir(new_clean_data_path):
-        try:
-            os.mkdir(new_clean_data_path, access_rights)
-        except OSError:
-            print("Creation of the directory %s failed" % new_clean_data_path)
-        else:
-            print("Successfully created the directory %s" % new_clean_data_path)
+    return folder_path + "/"
 
-    else:
-        print("Directory %s already exists" % new_clean_data_path)
+
+# def create_work_folders(raw_files_path, clean_data_path, absolute=True):
+#
+#     return raw_files_path + "/", clean_data_path + "/"
 
 def get_correct_line(df_decisions):
     """
@@ -58,8 +44,7 @@ def get_correct_line(df_decisions):
     return df_decisions.sort_values('timestamp_modification').drop_duplicates('chemin_source', keep='last')
 
 
-def process_file(row):
-
+def process_file(row, raw_files_path, clean_data_path):
     source_path = (row["chemin_source"]).replace("\\", "/")  # Windows path -> Linux path cool hack
 
     if "manuel" in source_path:
@@ -69,8 +54,7 @@ def process_file(row):
         source_path = "/".join(source_path.split("/")[3:])  # Remove server name from path
         decision_file_id = os.path.splitext(os.path.basename(source_path))[0]
 
-
-    if os.path.isfile(database_path + source_path):
+    if os.path.isfile(raw_files_path + source_path):
         # text = textract.process("database/" + source_path, encoding='utf-8').decode("utf8")
         # row["valid"] = True
         # row["text"] = text
@@ -85,7 +69,7 @@ def process_file(row):
             xmlo.write(row["detail_anonymisation"])
 
         txt_path = clean_data_path + str(row["id"]) + ".txt"
-        subprocess.check_call(["textutil", "-convert", "txt", database_path + source_path, "-output", txt_path])
+        subprocess.check_call(["textutil", "-convert", "txt", raw_files_path + source_path, "-output", txt_path])
         # with open(txt_path, "w", encoding="utf-8") as txto:
         #     txto.write(text)
 
@@ -96,12 +80,13 @@ def process_file(row):
     return 1
 
 
-if __name__ == '__main__':
+def build_database(raw_files_path, clean_data_path, only_corriges=True, n_jobs=available_cpu_count()):
 
-    #params
-    only_corriges = True
+    raw_files_path = create_folder(raw_files_path, absolute=True)
+    clean_data_path = create_folder(clean_data_path, absolute=True)
+    train_test_dev = create_folder(clean_data_path + "train_test_dev", absolute=True)
 
-    df_decisions = pd.read_csv(database_path + "documents.csv")
+    df_decisions = pd.read_csv(raw_files_path  + "documents.csv")
     if only_corriges:
         df_decisions = df_decisions[df_decisions.statut == 5]
     df_decisions = get_correct_line(df_decisions)
@@ -111,10 +96,12 @@ if __name__ == '__main__':
     df_decisions["text"] = None
     df_decisions["local_path"] = None
 
-    job_output = Parallel(n_jobs=n_jobs)(delayed(process_file)(row) for index, row in tqdm(df_decisions.iterrows()))
+    job_output = Parallel(n_jobs=n_jobs)(delayed(process_file)(row, raw_files_path, clean_data_path) for index, row in tqdm(df_decisions.iterrows()))
 
 
-    # logger.info(
-    #     f"{len(processed_fine)} XML/DOC files were treated and saved as CoNLL. "
-    #     f"{len(job_output) - len(processed_fine)} files had some error.")
+if __name__ == '__main__':
 
+    raw_files_path = "/Users/thomasclavier/Documents/Projects/Etalab/prod/pseudo_conseil_etat/src/database"
+    clean_data_path = "/Users/thomasclavier/Documents/Projects/Etalab/prod/pseudo_conseil_etat/src/clean_data"
+
+    build_database(raw_files_path, clean_data_path)
