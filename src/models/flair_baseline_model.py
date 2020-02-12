@@ -6,6 +6,9 @@ from typing import List
 
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
+import flair, torch
+
+flair.device =torch.device('cuda:0')
 
 
 def create_flair_corpus(data_folder):
@@ -36,24 +39,25 @@ print(tag_dictionary.idx2item)
 # 4. initialize embeddings
 embedding_types: List[TokenEmbeddings] = [
 
-    # WordEmbeddings('fr-crawl'),
+    WordEmbeddings('fr-crawl'),
 
     # comment in this line to use character embeddings
     # CharacterEmbeddings(),
 
     # comment in these lines to use flair embeddings
     FlairEmbeddings('fr-forward'),
-    # FlairEmbeddings('fr-backward'),
+    FlairEmbeddings('fr-backward'),
 
     # bert embeddings
     # BertEmbeddings('bert-base-french')
 
     # CCASS Flair Embeddings FWD
-    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
+    #FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm.pt'),
 
     # CCASS Flair Embeddings BWD
-    FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
+    #FlairEmbeddings('/data/embeddings_CCASS/flair_language_model/jurinet/best-lm-backward.pt')
 ]
+
 
 embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
 
@@ -70,7 +74,7 @@ tagger: SequenceTagger = SequenceTagger(hidden_size=256,
 from flair.trainers import ModelTrainer
 
 trainer: ModelTrainer = ModelTrainer(tagger, corpus)
-trainer.num_workers = 20
+#trainer.num_workers = 20
 # 7. start training
 trainer.train('models/baseline_ner',
               learning_rate=0.1,

@@ -85,10 +85,13 @@ def build_database(raw_files_path, clean_data_path, only_corriges=True, n_jobs=a
     raw_files_path = create_folder(raw_files_path, absolute=True)
     clean_data_path = create_folder(clean_data_path, absolute=True)
     train_test_dev = create_folder(clean_data_path + "train_test_dev", absolute=True)
+    train = create_folder(clean_data_path + "train_test_dev/train", absolute=True)
+    test = create_folder(clean_data_path + "train_test_dev/test", absolute=True)
+    dev = create_folder(clean_data_path + "train_test_dev/dev", absolute=True)
 
     df_decisions = pd.read_csv(raw_files_path  + "documents.csv")
     if only_corriges:
-        df_decisions = df_decisions[df_decisions.statut == 5]
+        df_decisions = df_decisions[df_decisions.statut == 5] # modifier ici
     df_decisions = get_correct_line(df_decisions)
     df_decisions = df_decisions.sample(frac=0.1)
 
