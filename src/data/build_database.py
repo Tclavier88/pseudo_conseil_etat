@@ -104,7 +104,7 @@ def build_database(raw_files_path, clean_data_path, only_corriges=True, n_jobs=a
 
 if __name__ == '__main__':
 
-    raw_files_path = "/Users/thomasclavier/Documents/Projects/Etalab/prod/pseudo_conseil_etat/src/database"
-    clean_data_path = "/Users/thomasclavier/Documents/Projects/Etalab/prod/pseudo_conseil_etat/src/clean_data"
+    raw_files_path = ""
+    clean_data_path = ""
 
     build_database(raw_files_path, clean_data_path)
